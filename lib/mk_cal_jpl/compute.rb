@@ -13,6 +13,27 @@ module MkCalJpl
     # @return: holiday (漢字１文字)
     #=========================================================================
     def compute_holiday(year, month, day)
+      holidays = get_holidays(year)
+      code = 99
+      holidays.each do |holiday|
+        if holiday[0] == month &&  holiday[1] == day
+          code = holiday[2]
+          break
+        end
+      end
+      holiday = ""
+      res = Const::HOLIDAY.select { |h| h[0] == code }
+      holiday = res[0][4] unless res == []
+      return holiday
+    end
+
+    #=========================================================================
+    # 年間休日一覧の取得
+    #
+    # @param:  year
+    # @return: holidays (年間休日の配列)
+    #=========================================================================
+    def get_holidays(year)
       holiday_0 = Array.new  # 変動の祝日用
       holiday_1 = Array.new  # 国民の休日用
       holiday_2 = Array.new  # 振替休日用
@@ -111,19 +132,7 @@ module MkCalJpl
           holiday_2 << wk_ary
         end
       end
-
-      # 配列整理
-      code = 99
-      (holiday_0 + holiday_1 + holiday_2).sort.each do |holiday|
-        if holiday[0] == month &&  holiday[1] == day
-          code = holiday[2]
-          break
-        end
-      end
-      holiday = ""
-      res = Const::HOLIDAY.select { |h| h[0] == code }
-      holiday = res[0][4] unless res == []
-      return holiday
+      return (holiday_0 + holiday_1 + holiday_2).sort
     end
 
     #=========================================================================

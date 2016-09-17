@@ -35,6 +35,24 @@ describe MkCalJpl::Compute do
     it { expect(subject).to eq "" }
   end
 
+  context ".get_holidays" do
+    subject do
+      c.instance_variable_set(:@bin_path, BIN_PATH)
+      c.get_holidays(2016)
+    end
+    it { expect(subject).to match([
+      [ 1,  1,  0, 2457388.5, "金"], [ 1, 11,  1, 2457398.5, "月"],
+      [ 2, 11,  2, 2457429.5, "木"], [ 3, 20,  3, 2457467.5, "日"],
+      [ 3, 21, 91, 2457468.5, "月"], [ 4, 29,  4, 2457507.5, "金"],
+      [ 5,  3,  5, 2457511.5, "火"], [ 5,  4,  6, 2457512.5, "水"],
+      [ 5,  5,  7, 2457513.5, "木"], [ 7, 18,  8, 2457587.5, "月"],
+      [ 8, 11,  9, 2457611.5, "木"], [ 9, 19, 10, 2457650.5, "月"],
+      [ 9, 22, 11, 2457653.5, "木"], [10, 10, 12, 2457671.5, "月"],
+      [11,  3, 13, 2457695.5, "木"], [11, 23, 14, 2457715.5, "水"],
+      [12, 23, 15, 2457745.5, "金"]
+    ]) }
+  end
+
   context ".compute_sekki_24 (1)" do
     subject do
       c.instance_variable_set(:@bin_path, BIN_PATH)
