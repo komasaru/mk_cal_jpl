@@ -1,0 +1,34 @@
+#!/usr/bin/env ruby
+
+require "mk_cal_jpl"
+
+o = MkCalJpl.new(*ARGV)  # JPL binary file's path, JST(YYYYMMDD)
+exit unless o
+
+year     = o.year
+month    = o.month
+day      = o.day
+jd       = o.jd
+jd_jst   = o.jd_jst
+holiday  = o.holiday
+sekki_24 = o.sekki_24
+zassetsu = o.zassetsu
+yobi     = o.yobi
+kanshi   = o.kanshi
+sekku    = o.sekku
+lambda   = o.lambda
+alpha    = o.alpha
+moonage  = o.moonage
+oc       = o.oc
+str =  sprintf("%04d-%02d-%02d", year, month, day)
+str << " #{yobi}曜日"
+str << " #{holiday}" unless holiday == ""
+str << " #{jd}UTC(#{jd_jst}JST) #{kanshi} "
+str << sprintf("%04d-%02d-%02d", oc[0], oc[2], oc[3])
+str << "(閏)" if oc[1] == 1
+str << " #{oc[4]}"
+str << " #{sekki_24}" unless sekki_24 == ""
+str << " #{zassetsu}" unless zassetsu == ""
+str << " #{sekku}" unless sekku == ""
+str << " #{lambda} #{alpha} #{moonage}"
+puts str
