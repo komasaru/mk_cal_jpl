@@ -55,6 +55,9 @@ Or install it yourself as:
     # Otherwise
     o = MkCalJpl.new("/path/to/<JPL DE430 binary>", "20160916")
 
+* Second argument should be JST(Format: `%Y%m%d`).
+* If you don't set a second argument, this class considers the system time to have been set as a second argument(JST).
+
 ### Calculation
 
     year     = o.year
