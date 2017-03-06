@@ -342,7 +342,7 @@ module MkCalJpl
     # @return: moonage
     #=========================================================================
     def compute_moonage(jd)
-      return jd - compute_saku(jd - Const::JST_D)
+      return jd - compute_saku(jd)
     end
 
     #=========================================================================
@@ -569,11 +569,11 @@ module MkCalJpl
           delta_rm = norm_angle(delta_rm)
         end
         # 時刻引数の補正値 Δt
-        delta_t1  = (delta_rm * 29.530589 / 360.0).truncate
-        delta_t2  = delta_rm * 29.530589 / 360.0 - delta_t1
+        delta_t1 = (delta_rm * 29.530589 / 360.0).truncate
+        delta_t2 = delta_rm * 29.530589 / 360.0 - delta_t1
         # 時刻引数の補正
-        tm1 = tm1 - delta_t1
-        tm2 = tm2 - delta_t2
+        tm1 -= delta_t1
+        tm2 -= delta_t2
         if tm2 < 0
           tm2 += 1
           tm1 -= 1
@@ -584,7 +584,7 @@ module MkCalJpl
           tm2 = 0
         # 初期値を補正したにも関わらず、振動を続ける場合には初期値を答えとして
         # 返して強制的にループを抜け出して異常終了させる。
-        elsif lc > 30 && (delta_t1+delta_t2).abs > (1.0 / 86400.0)
+        elsif lc > 30 && (delta_t1 + delta_t2).abs > (1.0 / 86400.0)
           tm1 = jd
           tm2 = 0
           break
@@ -593,7 +593,7 @@ module MkCalJpl
       end
       # 時刻引数を合成、DT ==> JST 変換を行い、戻り値とする
       # （補正時刻=0.0sec と仮定して計算）
-      return tm2 + tm1 + 9 / 24.0
+      return tm2 + tm1 + Const::JST_D
     end
 
     #=========================================================================
