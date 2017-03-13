@@ -39,40 +39,39 @@ module MkCalJpl
       holiday_2 = Array.new  # 振替休日用
 
       # 変動の祝日の日付･曜日を計算 ( 振替休日,国民の休日を除く )
-      Const::HOLIDAY.each do |holiday|
-        unless holiday[1] == 99
-          unless holiday[2] == 99   # 月日が既定のもの
-            jd_jst = gc2jd(year, holiday[1], holiday[2]) + Const::JST_D
-            yobi = compute_yobi(jd_jst)
-            holiday_0 << [holiday[1], holiday[2], holiday[0], jd_jst, yobi]
-          else                      # 月日が不定のもの
-            if holiday[3] == 21     # 第2月曜日 ( 8 - 14 の月曜日)
-              8.upto(14) do |d|
-                jd_jst = gc2jd(year, holiday[1], d) + Const::JST_D
-                yobi = compute_yobi(jd_jst)
-                holiday_0 << [holiday[1], d, holiday[0], jd_jst, "月"] if yobi == "月"
+      Const::HOLIDAY.each do |id, month, day, kbn, name|
+        next if kbn > 7
+        if kbn == 0   # 月日が既定のもの
+          jd_jst = gc2jd(year, month, day)
+          yobi = compute_yobi(jd_jst)
+          holiday_0 << [month, day, id, jd_jst, yobi]
+        else          # 月日が不定のもの
+          case kbn
+          when 2      # 第2月曜日 ( 8 - 14 の月曜日)
+            8.upto(14) do |d|
+              jd_jst = gc2jd(year, month, d)
+              yobi = compute_yobi(jd_jst)
+              if yobi == "月"
+                holiday_0 << [month, d, id, jd_jst, yobi]
+                break
               end
-            elsif holiday[3] == 31  # 第3月曜日 ( 15 - 21 の月曜日)
-              15.upto(21) do |d|
-                jd_jst = gc2jd(year, holiday[1], d) + Const::JST_D
-                yobi = compute_yobi(jd_jst)
-                holiday_0 << [holiday[1], d, holiday[0], jd_jst, "月"] if yobi == "月"
-              end
-            elsif holiday[3] == 80  # 春分の日
-              jd_jst = gc2jd(year, holiday[1], 31) + Const::JST_D
-              nibun_jd = compute_last_nc(jd_jst, 90)[0]
-              d = jd2ymd(nibun_jd)[2]
-              wk_jd = gc2jd(year, holiday[1], d) + Const::JST_D
-              yobi = compute_yobi(wk_jd)
-              holiday_0 << [holiday[1], d, holiday[0], wk_jd, yobi]
-            elsif holiday[3] == 81  # 秋分の日
-              jd_jst = gc2jd(year, holiday[1], 30) + Const::JST_D
-              nibun_jd = compute_last_nc(jd_jst, 90)[0]
-              d = jd2ymd(nibun_jd)[2]
-              wk_jd = gc2jd(year, holiday[1], d) + Const::JST_D
-              yobi = compute_yobi(wk_jd)
-              holiday_0 << [holiday[1], d, holiday[0], wk_jd, yobi]
             end
+          when 3      # 第3月曜日 ( 15 - 21 の月曜日)
+            15.upto(21) do |d|
+              jd_jst = gc2jd(year, month, d)
+              yobi = compute_yobi(jd_jst)
+              if yobi == "月"
+                holiday_0 << [month, d, id, jd_jst, yobi]
+                break
+              end
+            end
+          when 4  # 二分（春分、秋分）
+            jd_jst = gc2jd(year, month, 30)
+            nibun_jd = get_last_nc(jd_jst, 90)[0]
+            d = jd2ymd(nibun_jd - 0.125)[2]
+            wk_jd = gc2jd(year, month, d)
+            yobi = compute_yobi(wk_jd)
+            holiday_0 << [month, d, id, wk_jd, yobi]
           end
         end
       end
@@ -81,16 +80,15 @@ module MkCalJpl
       # ( 「国民の祝日」で前後を挟まれた「国民の祝日」でない日 )
       # ( 年またぎは考慮していない(今のところ不要) )
       0.upto(holiday_0.length - 2) do |i|
-        if holiday_0[i][3] + 2 == holiday_0[i + 1][3]
-          jd = holiday_0[i][3] + 1
+        m_0, d_0 = holiday_0[i    ][0, 2]
+        m_1, d_1 = holiday_0[i + 1][0, 2]
+        jd_0 = gc2jd(year, m_0, d_0)
+        jd_1 = gc2jd(year, m_1, d_1)
+        if jd_0 + 2 == jd_1
+          jd = jd_0 + 1
+          m, d = jd2ymd(jd)[1, 2]
           yobi = Const::YOBI[Const::YOBI.index(holiday_0[i][4]) + 1]
-          wk_ary = Array.new
-          wk_ary << jd2ymd(jd)[1]
-          wk_ary << jd2ymd(jd)[2]
-          wk_ary << 90
-          wk_ary << jd
-          wk_ary << yobi
-          holiday_1 << wk_ary
+          holiday_1 << [m, d, 90, jd, yobi]
         end
       end
 
@@ -102,12 +100,8 @@ module MkCalJpl
           next_jd = holiday_0[i][3] + 1
           next_yobi = Const::YOBI[Const::YOBI.index(holiday_0[i][4]) + 1]
           if i == holiday_0.length - 1
-            wk_ary = Array.new
-            wk_ary << jd2ymd(next_jd)[1]
-            wk_ary << jd2ymd(next_jd)[2]
-            wk_ary << 91
-            wk_ary << next_jd
-            wk_ary << next_yobi
+            wk_ymd = jd2ymd(next_jd)
+            wk_ary = [wk_ymd[1], wk_ymd[2], 91, next_jd, next_yobi]
           else
             flg_furikae = 0
             plus_day = 1
@@ -115,16 +109,13 @@ module MkCalJpl
               if i + plus_day < holiday_0.length
                 if next_jd == holiday_0[i + plus_day][3]
                   next_jd += 1
-                  next_yobi = next_yobi == "土" ? "日" : Const::YOBI[Const::YOBI.index(next_yobi) + 1]
+                  next_yobi = next_yobi == "土" ? "日" :
+                              Const::YOBI[Const::YOBI.index(next_yobi) + 1]
                   plus_day += 1
                 else
                   flg_furikae = 1
-                  wk_ary = Array.new
-                  wk_ary << jd2ymd(next_jd)[1]
-                  wk_ary << jd2ymd(next_jd)[2]
-                  wk_ary << 91
-                  wk_ary << next_jd
-                  wk_ary << next_yobi
+                  wk_ymd = jd2ymd(next_jd)
+                  wk_ary =[wk_ymd[1], wk_ymd[2], 91, next_jd, next_yobi]
                 end
               end
             end
@@ -142,11 +133,11 @@ module MkCalJpl
     # @return: sekki_24 (二十四節気の文字列)
     #=========================================================================
     def compute_sekki_24(jd)
-      lsun_today     = compute_lambda(jd)
-      lsun_tomorrow  = compute_lambda(jd + 1)
-      lsun_today0    = 15 * (lsun_today / 15.0).truncate
-      lsun_tomorrow0 = 15 * (lsun_tomorrow / 15.0).truncate
-      return lsun_today0 == lsun_tomorrow0 ? "" : Const::SEKKI_24[lsun_tomorrow0 / 15]
+      ymd = jd2ymd(jd)[0, 3]
+      res = @sekki24_tms.select do |row|
+        row[0, 3].map(&:to_i) == ymd
+      end[0]
+      return res ? Const::SEKKI_24[res[6].to_i / 15] : ""
     end
 
     #=========================================================================
@@ -342,7 +333,7 @@ module MkCalJpl
     # @return: moonage
     #=========================================================================
     def compute_moonage(jd)
-      return jd - compute_saku(jd)
+      return jd - get_last_saku(jd)
     end
 
     #=========================================================================
@@ -383,23 +374,23 @@ module MkCalJpl
       # 計算対象の直前にあたる二分二至の時刻を計算
       #   chu[0][0] : 二分二至の時刻
       #   chu[0][1] : その時の太陽黄経
-      chu[0] = compute_last_nc(tm0, 90)
+      chu[0] = get_last_nc(tm0, 90)
       # 中気の時刻を計算 ( 3回計算する )
       #   chu[i][0] : 中気の時刻
       #   chu[i][1] : その時の太陽黄経
       1.upto(3) do |i|
-        chu[i] = compute_last_nc(chu[i - 1][0] + 32, 30)
+        chu[i] = get_last_nc(chu[i - 1][0] + 32, 30)
       end
       # 計算対象の直前にあたる二分二至の直前の朔の時刻を求める
-      saku[0] = compute_saku(chu[0][0])
+      saku[0] = get_last_saku(chu[0][0])
       # 朔の時刻を求める
       1.upto(4) do |i|
         tm = saku[i-1] + 30
-        saku[i] = compute_saku(tm)
+        saku[i] = get_last_saku(tm)
         # 前と同じ時刻を計算した場合( 両者の差が26日以内 )には、初期値を
         # +33日にして再実行させる。
         if (saku[i-1].truncate - saku[i].truncate).abs <= 26
-          saku[i] = compute_saku(saku[i-1] + 35)
+          saku[i] = get_last_saku(saku[i-1] + 35)
         end
       end
       # saku[1]が二分二至の時刻以前になってしまった場合には、朔をさかのぼり過ぎ
@@ -408,14 +399,14 @@ module MkCalJpl
       # する。（近日点通過の近辺で朔があると起こる事があるようだ...？）
       if saku[1].truncate <= chu[0][0].truncate
         0.upto(3) { |i| saku[i] = saku[i+1] }
-        saku[4] = compute_saku(saku[3] + 35)
+        saku[4] = get_last_saku(saku[3] + 35)
       # saku[0]が二分二至の時刻以後になってしまった場合には、朔をさかのぼり足
       # りないと見て、朔の時刻を繰り上げて修正する。
       # その際、計算もれ（saku[0]）になっている部分を補うため、朔の時刻を計算
       # する。（春分点の近辺で朔があると起こる事があるようだ...？）
       elsif saku[0].truncate > chu[0][0].truncate
         4.downto(1) { |i| saku[i] = saku[i-1] }
-        saku[0] = compute_saku(saku[0] - 27)
+        saku[0] = get_last_saku(saku[0] - 27)
       end
       # 閏月検索Flagセット
       # （節月で４ヶ月の間に朔が５回あると、閏月がある可能性がある。）
@@ -473,127 +464,44 @@ module MkCalJpl
     end
 
     #=========================================================================
-    # 直前二分二至・中気時刻の計算
+    # 直前二分二至・中気時刻の取得
     #
     # @param: jd  (ユリウス日)
     # @param: kbn (90: 二分二至, 30: 中気)
     # @return: [二分二至・中気の時刻, その時の黄経]
     #=========================================================================
-    def compute_last_nc(jd, kbn)
-      jd -= 0.5
-      # 時刻引数を分解
-      tm1  = jd.truncate  # 整数部分
-      tm2  = jd - tm1     # 小数部分
-      tm2 -= Const::JST_D
-
-      # 直前の二分二至の黄経 λsun0 を求める
-      rm_sun  = compute_lambda(jd + 0.5)
-      rm_sun0 = kbn * (rm_sun / kbn.to_f).truncate
-
-      # 繰り返し計算によって直前の二分二至の時刻を計算する
-      # （誤差が±1.0 sec以内になったら打ち切る。）
-      delta_t1 = 0 ; delta_t2 = 1
-      while (delta_t1 + delta_t2).abs > (1.0 / 86400.0)
-        # λsun を計算
-        t = tm1 + tm2 + Const::JST_D + 0.5
-        rm_sun = compute_lambda(t)
-
-        # 黄経差 Δλ＝λsun －λsun0
-        delta_rm = rm_sun - rm_sun0
-
-        # Δλの引き込み範囲（±180°）を逸脱した場合には、補正を行う
-        case
-        when delta_rm >  180; delta_rm -= 360
-        when delta_rm < -180; delta_rm += 360
-        end
-
-        # 時刻引数の補正値 Δt
-        delta_t1  = (delta_rm * 365.2 / 360.0).truncate
-        delta_t2  = delta_rm * 365.2 / 360.0 - delta_t1
-
-        # 時刻引数の補正
-        tm1 = tm1 - delta_t1
-        tm2 = tm2 - delta_t2
-        if tm2 < 0
-          tm2 += 1
-          tm1 -= 1
+    def get_last_nc(jd, kbn)
+      sekki24_tms = @sekki24_tms.select { |s| s[6].to_i % kbn == 0}
+      jd -= 0.125
+      ymd = jd2ymd(jd)
+      str_target = sprintf("%04d-%02d-%02d %02d:%02d:%02d %3d", *ymd, kbn)
+      sekki24_tms.reverse.each do |row|
+        str = sprintf("%04d-%02d-%02d %02d:%02d:%02d", *row[0, 6])
+        unless str[0, 19] > str_target
+          year, month, day, hour, min, sec = row[0, 6].map(&:to_i)
+          return [gc2jd(year, month, day, hour, min, sec), row[6].to_i]
         end
       end
-
-      # nibun_chu[0] : 時刻引数を合成、DT ==> JST 変換を行い、戻り値とする
-      #                ( 補正時刻=0.0sec と仮定して計算 )
-      # nibun_chu[1] : 黄経
-      nibun_chu = Array.new(2, 0)
-      nibun_chu[0]  = tm2 + 9 / 24.0
-      nibun_chu[0] += tm1
-      nibun_chu[1]  = rm_sun0
-      return nibun_chu
+      return []
     end
 
     #=========================================================================
-    # 直近の朔の時刻（JST）の計算
+    # 直近の朔の時刻（JST）の取得
     #
     # @param:  jd (ユリウス日)
     # @return: saku (直前の朔の時刻)
     #=========================================================================
-    def compute_saku(jd)
-      lc = 1
-
-      # 時刻引数を分解する
-      tm1 = jd.truncate
-      tm2 = jd - tm1
-      tm2 -= Const::JST_D
-
-      # 繰り返し計算によって朔の時刻を計算する
-      # (誤差が±1.0 sec以内になったら打ち切る。)
-      delta_t1 = 0 ; delta_t2 = 1
-      while (delta_t1 + delta_t2).abs > (1.0 / 86400.0)
-        # 太陽の黄経λsun ,月の黄経λmoon を計算
-        t = tm1 + tm2 + Const::JST_D + 0.5
-        rm_sun  = compute_lambda(t)
-        rm_moon = compute_alpha(t)
-        # 月と太陽の黄経差Δλ
-        # Δλ＝λmoon－λsun
-        delta_rm = rm_moon - rm_sun
-        # ﾙｰﾌﾟの1回目 ( lc = 1 ) で delta_rm < 0.0 の場合には引き込み範囲に
-        # 入るように補正する
-        if lc == 1 && delta_rm < 0
-          delta_rm = norm_angle(delta_rm)
-        #   春分の近くで朔がある場合 ( 0 ≦λsun≦ 20 ) で、月の黄経λmoon≧300 の
-        #   場合には、Δλ＝ 360.0 － Δλ と計算して補正する
-        elsif rm_sun >= 0 && rm_sun <= 20 && rm_moon >= 300
-          delta_rm = norm_angle(delta_rm)
-          delta_rm = 360 - delta_rm
-        # Δλの引き込み範囲 ( ±40° ) を逸脱した場合には、補正を行う
-        elsif delta_rm.abs > 40.0
-          delta_rm = norm_angle(delta_rm)
+    def get_last_saku(jd)
+      ymd = jd2ymd(jd)
+      str_target = sprintf("%04d-%02d-%02d %02d:%02d:%02d", *ymd)
+      @saku_tms.reverse.each do |row|
+        str = sprintf("%04d-%02d-%02d %02d:%02d:%02d", *row)
+        unless str[0, 19] > str_target
+          year, month, day, hour, min, sec = row.map(&:to_i)
+          return gc2jd(year, month, day, hour, min, sec) - 0.125
         end
-        # 時刻引数の補正値 Δt
-        delta_t1 = (delta_rm * 29.530589 / 360.0).truncate
-        delta_t2 = delta_rm * 29.530589 / 360.0 - delta_t1
-        # 時刻引数の補正
-        tm1 -= delta_t1
-        tm2 -= delta_t2
-        if tm2 < 0
-          tm2 += 1
-          tm1 -= 1
-        end
-        # ループ回数が15回になったら、初期値 tm を tm-26 とする。
-        if lc == 15 && (delta_t1 + delta_t2).abs > (1.0 / 86400.0)
-          tm1 = (jd - 26).truncate
-          tm2 = 0
-        # 初期値を補正したにも関わらず、振動を続ける場合には初期値を答えとして
-        # 返して強制的にループを抜け出して異常終了させる。
-        elsif lc > 30 && (delta_t1 + delta_t2).abs > (1.0 / 86400.0)
-          tm1 = jd
-          tm2 = 0
-          break
-        end
-        lc += 1
       end
-      # 時刻引数を合成、DT ==> JST 変換を行い、戻り値とする
-      # （補正時刻=0.0sec と仮定して計算）
-      return tm2 + tm1 + Const::JST_D
+      return []
     end
 
     #=========================================================================

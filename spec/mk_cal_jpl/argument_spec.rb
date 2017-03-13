@@ -1,8 +1,8 @@
 require "spec_helper"
 
 describe MkCalJpl::Argument do
-  context %Q{.new("#{BIN_PATH}", "20170226") } do
-    let(:a) { described_class.new(BIN_PATH, "20170226") }
+  context %Q{.new("#{BIN_PATH}", "20170313") } do
+    let(:a) { described_class.new(BIN_PATH, "20170313") }
 
     context "object" do
       it { expect(a).to be_an_instance_of(described_class) }
@@ -10,7 +10,7 @@ describe MkCalJpl::Argument do
 
     context ".get_args" do
       subject { a.get_args }
-      it { expect(subject).to match([BIN_PATH, [2017, 2, 26]]) }
+      it { expect(subject).to match([BIN_PATH, [2017, 3, 13]]) }
     end
 
     context ".get_binpath" do
@@ -29,7 +29,7 @@ describe MkCalJpl::Argument do
         a.send(:get_binpath)
         a.send(:get_jst)
       end
-      it { expect(subject).to match([2017, 2, 26]) }
+      it { expect(subject).to match([2017, 3, 13]) }
     end
   end
 
@@ -48,7 +48,7 @@ describe MkCalJpl::Argument do
   end
 
   context %Q{.new("#{BIN_DUMMY}", "20170226") } do
-    let(:a) { described_class.new(BIN_DUMMY, "20170226") }
+    let(:a) { described_class.new(BIN_DUMMY, "20170313") }
 
     context ".check_bin_path" do
       let(:bin_path) { a.send(:get_binpath) }
@@ -57,8 +57,8 @@ describe MkCalJpl::Argument do
     end
   end
 
-  context %Q{.new("#{BIN_PATH}", "20170226A") } do
-    let(:a) { described_class.new(BIN_PATH, "20170226A") }
+  context %Q{.new("#{BIN_PATH}", "20170313X") } do
+    let(:a) { described_class.new(BIN_PATH, "20170313X") }
 
     context ".get_args" do
       subject { a.get_args }

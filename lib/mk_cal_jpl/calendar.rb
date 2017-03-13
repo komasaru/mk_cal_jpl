@@ -11,6 +11,8 @@ module MkCalJpl
       @year, @month, @day = jst
       @jd = gc2jd(@year, @month, @day)
       @jd_jst = @jd + Const::JST_D
+      @sekki24_tms = Const::SEKKI_24_TM.each_slice(7).to_a
+      @saku_tms    = Const::SAKU_TM.each_slice(6).to_a
     end
 
     #=========================================================================

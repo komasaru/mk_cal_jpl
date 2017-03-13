@@ -34,15 +34,15 @@ describe MkCalJpl::Calendar do
     let(:c) { MkCalJpl::Calendar.new(BIN_PATH, [2016, 5, 3]) }
     subject { c.holidays }
     it { expect(subject).to match([
-      [ 1,  1,  0, 2457388.5, "金"], [ 1, 11,  1, 2457398.5, "月"],
-      [ 2, 11,  2, 2457429.5, "木"], [ 3, 20,  3, 2457467.5, "日"],
-      [ 3, 21, 91, 2457468.5, "月"], [ 4, 29,  4, 2457507.5, "金"],
-      [ 5,  3,  5, 2457511.5, "火"], [ 5,  4,  6, 2457512.5, "水"],
-      [ 5,  5,  7, 2457513.5, "木"], [ 7, 18,  8, 2457587.5, "月"],
-      [ 8, 11,  9, 2457611.5, "木"], [ 9, 19, 10, 2457650.5, "月"],
-      [ 9, 22, 11, 2457653.5, "木"], [10, 10, 12, 2457671.5, "月"],
-      [11,  3, 13, 2457695.5, "木"], [11, 23, 14, 2457715.5, "水"],
-      [12, 23, 15, 2457745.5, "金"]
+      [ 1,  1,  0, 2457388.125, "金"], [ 1, 11,  1, 2457398.125, "月"],
+      [ 2, 11,  2, 2457429.125, "木"], [ 3, 20,  3, 2457467.125, "日"],
+      [ 3, 21, 91, 2457468.125, "月"], [ 4, 29,  4, 2457507.125, "金"],
+      [ 5,  3,  5, 2457511.125, "火"], [ 5,  4,  6, 2457512.125, "水"],
+      [ 5,  5,  7, 2457513.125, "木"], [ 7, 18,  8, 2457587.125, "月"],
+      [ 8, 11,  9, 2457611.125, "木"], [ 9, 19, 10, 2457650.125, "月"],
+      [ 9, 22, 11, 2457653.125, "木"], [10, 10, 12, 2457671.125, "月"],
+      [11,  3, 13, 2457695.125, "木"], [11, 23, 14, 2457715.125, "水"],
+      [12, 23, 15, 2457745.125, "金"]
     ]) }
   end
 
@@ -133,19 +133,19 @@ describe MkCalJpl::Calendar do
   context ".alpha" do
     let(:c) { MkCalJpl::Calendar.new(BIN_PATH, [2016, 6, 5]) }
     subject { c.alpha }
-    it { expect(subject).to be_within(1.0e-4).of(67.4564) }
+    it { expect(subject).to be_within(1.0e-4).of(67.4573) }
   end
 
   context ".moonage" do
     let(:c) { MkCalJpl::Calendar.new(BIN_PATH, [2016, 6, 5]) }
     subject { c.moonage }
-    it { expect(subject).to be_within(1.0e-2).of(29.31) }
+    it { expect(subject).to be_within(1.0e-2).of(0.00) }
   end
 
   context ".oc (case: non-leap)" do
-    let(:c) { MkCalJpl::Calendar.new(BIN_PATH, [2016, 6, 5]) }
+    let(:c) { MkCalJpl::Calendar.new(BIN_PATH, [2017, 2, 26]) }
     subject { c.oc }
-    it { expect(subject).to match([2016, 0, 5, 1, "大安"]) }
+    it { expect(subject).to match([2017, 0, 2, 1, "友引"]) }
   end
 
   context ".oc (case: leap)" do
