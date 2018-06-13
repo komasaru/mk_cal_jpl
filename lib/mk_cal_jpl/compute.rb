@@ -23,7 +23,7 @@ module MkCalJpl
       end
       holiday = ""
       res = Const::HOLIDAY.select { |h| h[0] == code }
-      holiday = res[0][4] unless res == []
+      holiday = res[0][6] unless res == []
       return holiday
     end
 
@@ -39,8 +39,9 @@ module MkCalJpl
       holiday_2 = Array.new  # 振替休日用
 
       # 変動の祝日の日付･曜日を計算 ( 振替休日,国民の休日を除く )
-      Const::HOLIDAY.each do |id, month, day, kbn, name|
+      Const::HOLIDAY.each do |id, month, day, kbn, year_s, year_e, name|
         next if kbn > 7
+        next if year < year_s || year_e < year
         if kbn == 0   # 月日が既定のもの
           jd_jst = gc2jd(year, month, day)
           yobi = compute_yobi(jd_jst)
@@ -79,6 +80,7 @@ module MkCalJpl
       # 国民の休日計算
       # ( 「国民の祝日」で前後を挟まれた「国民の祝日」でない日 )
       # ( 年またぎは考慮していない(今のところ不要) )
+      year_s_k = Const::HOLIDAY.select { |a| a[0] == 90 }[0][4]
       0.upto(holiday_0.length - 2) do |i|
         m_0, d_0 = holiday_0[i    ][0, 2]
         m_1, d_1 = holiday_0[i + 1][0, 2]
@@ -90,11 +92,12 @@ module MkCalJpl
           yobi = Const::YOBI[Const::YOBI.index(holiday_0[i][4]) + 1]
           holiday_1 << [m, d, 90, jd, yobi]
         end
-      end
+      end if year < year_s_k
 
       # 振替休日計算
       # ( 「国民の祝日」が日曜日に当たるときは、
       #   その日後においてその日に最も近い「国民の祝日」でない日 )
+      year_s_f = Const::HOLIDAY.select { |a| a[0] == 91 }[0][4]
       0.upto(holiday_0.length - 1) do |i|
         if holiday_0[i][4] == "日"
           next_jd = holiday_0[i][3] + 1
@@ -122,7 +125,7 @@ module MkCalJpl
           end
           holiday_2 << wk_ary
         end
-      end
+      end if year < year_s_f
       return (holiday_0 + holiday_1 + holiday_2).sort
     end
 
