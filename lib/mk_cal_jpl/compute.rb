@@ -10,7 +10,7 @@ module MkCalJpl
     # @param:  year
     # @param:  month
     # @param:  day
-    # @return: holiday (漢字１文字)
+    # @return: holiday (漢字)
     #=========================================================================
     def compute_holiday(year, month, day)
       holidays = get_holidays(year)
@@ -35,8 +35,8 @@ module MkCalJpl
     #=========================================================================
     def get_holidays(year)
       holiday_0 = Array.new  # 変動の祝日用
-      holiday_1 = Array.new  # 国民の休日用
-      holiday_2 = Array.new  # 振替休日用
+      holiday_1 = Array.new  # 振替休日用
+      holiday_2 = Array.new  # 国民の休日用
 
       # 変動の祝日の日付･曜日を計算 ( 振替休日,国民の休日を除く )
       Const::HOLIDAY.each do |id, month, day, kbn, year_s, year_e, name|
@@ -77,34 +77,17 @@ module MkCalJpl
         end
       end
 
-      # 国民の休日計算
-      # ( 「国民の祝日」で前後を挟まれた「国民の祝日」でない日 )
-      # ( 年またぎは考慮していない(今のところ不要) )
-      year_s_k = Const::HOLIDAY.select { |a| a[0] == 90 }[0][4]
-      0.upto(holiday_0.length - 2) do |i|
-        m_0, d_0 = holiday_0[i    ][0, 2]
-        m_1, d_1 = holiday_0[i + 1][0, 2]
-        jd_0 = gc2jd(year, m_0, d_0)
-        jd_1 = gc2jd(year, m_1, d_1)
-        if jd_0 + 2 == jd_1
-          jd = jd_0 + 1
-          m, d = jd2ymd(jd)[1, 2]
-          yobi = Const::YOBI[Const::YOBI.index(holiday_0[i][4]) + 1]
-          holiday_1 << [m, d, 90, jd, yobi]
-        end
-      end if year < year_s_k
-
       # 振替休日計算
       # ( 「国民の祝日」が日曜日に当たるときは、
       #   その日後においてその日に最も近い「国民の祝日」でない日 )
-      year_s_f = Const::HOLIDAY.select { |a| a[0] == 91 }[0][4]
+      year_s_f = Const::HOLIDAY.select { |a| a[0] == 90 }[0][4]
       0.upto(holiday_0.length - 1) do |i|
         if holiday_0[i][4] == "日"
           next_jd = holiday_0[i][3] + 1
           next_yobi = Const::YOBI[Const::YOBI.index(holiday_0[i][4]) + 1]
           if i == holiday_0.length - 1
             wk_ymd = jd2ymd(next_jd)
-            wk_ary = [wk_ymd[1], wk_ymd[2], 91, next_jd, next_yobi]
+            wk_ary = [wk_ymd[1], wk_ymd[2], 90, next_jd, next_yobi]
           else
             flg_furikae = 0
             plus_day = 1
@@ -118,15 +101,32 @@ module MkCalJpl
                 else
                   flg_furikae = 1
                   wk_ymd = jd2ymd(next_jd)
-                  wk_ary =[wk_ymd[1], wk_ymd[2], 91, next_jd, next_yobi]
+                  wk_ary =[wk_ymd[1], wk_ymd[2], 90, next_jd, next_yobi]
                 end
               end
             end
           end
-          holiday_2 << wk_ary
+          holiday_1 << wk_ary
         end
-      end if year < year_s_f
-      return (holiday_0 + holiday_1 + holiday_2).sort
+      end if year >= year_s_f
+
+      # 国民の休日計算
+      # ( 「国民の祝日」で前後を挟まれた「国民の祝日」でない日 )
+      # ( 年またぎは考慮していない(今のところ不要) )
+      year_s_k = Const::HOLIDAY.select { |a| a[0] == 91 }[0][4]
+      0.upto(holiday_0.length - 2) do |i|
+        m_0, d_0 = holiday_0[i    ][0, 2]
+        m_1, d_1 = holiday_0[i + 1][0, 2]
+        jd_0 = gc2jd(year, m_0, d_0)
+        jd_1 = gc2jd(year, m_1, d_1)
+        if jd_0 + 2 == jd_1
+          jd = jd_0 + 1
+          m, d = jd2ymd(jd)[1, 2]
+          yobi = Const::YOBI[Const::YOBI.index(holiday_0[i][4]) + 1]
+          holiday_2 << [m, d, 91, jd, yobi]
+        end
+      end if year >= year_s_k
+      return merge_sort(holiday_0, holiday_1, holiday_2)
     end
 
     #=========================================================================
@@ -660,6 +660,27 @@ module MkCalJpl
       a = MkApos.new(@bin_path, ymd)
       lmd = a.moon[1][0] * 180.0 / Math::PI
       return lmd
+    end
+
+    private
+
+    # マージ＆ソート
+    # * さらに、「振替休日」と「国民の休日」がダブる場合は、
+    #   「振替休日」を優先
+    def merge_sort(hol_0, hol_1, hol_2)
+      data = Array.new
+      data_src = (hol_0 + hol_1 + hol_2).sort
+      data_src.each_with_index do |d, i|
+        if i == 0
+          data << d
+          next
+        end
+        if data_src[i - 1][0..2] == d[0..2]
+          next if data_src[i - 1][3] == 90 && d[3] == 91
+        end
+        data << d
+      end
+      return data
     end
   end
 end
