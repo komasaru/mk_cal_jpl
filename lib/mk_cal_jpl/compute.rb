@@ -156,12 +156,16 @@ module MkCalJpl
       lsun_today = compute_lambda(jd)
       # 計算対象日の翌日の太陽の黄経
       lsun_tomorrow = compute_lambda(jd + 1)
+      # ====[ 190919:DEL ]===>
       # 計算対象日の5日前の太陽の黄経(社日計算用)
-      lsun_before_5 = compute_lambda(jd - 5)
+      #lsun_before_5 = compute_lambda(jd - 5)
+      # <===[ 190919:DEL ]====
       # 計算対象日の4日前の太陽の黄経(社日計算用)
       lsun_before_4 = compute_lambda(jd - 4)
+      # ====[ 190919:DEL ]===>
       # 計算対象日の5日後の太陽の黄経(社日計算用)
-      lsun_after_5  = compute_lambda(jd + 5)
+      #lsun_after_5  = compute_lambda(jd + 5)
+      # <===[ 190919:DEL ]====
       # 計算対象日の6日後の太陽の黄経(社日計算用)
       lsun_after_6  = compute_lambda(jd + 6)
       # 太陽の黄経の整数部分( 土用, 入梅, 半夏生 計算用 )
@@ -205,14 +209,19 @@ module MkCalJpl
         if compute_sekki_24(jd + 5)  == "春分"
           # 春分の日の黄経(太陽)と翌日の黄経(太陽)の中間点が
           # 0度(360度)以上なら、春分点が午前と判断
-          zassetsu << 4 if (lsun_after_5 + lsun_after_6 + 360) / 2.0 >= 360
+          # ====[ 190919:UPD ]===>
+          #zassetsu << 4 if (lsun_after_5 + lsun_after_6 + 360) / 2.0 >= 360
+          zassetsu << 4
+          # <===[ 190919:UPD ]===~
         end
-        # [ 5日前 ]
-        if compute_sekki_24(jd - 5) == "春分"
-          # 春分の日の黄経(太陽)と翌日の黄経(太陽)の中間点が
-          # 0度(360度)未満なら、春分点が午後と判断
-          zassetsu << 4 if (lsun_before_4 + lsun_before_5 + 360) / 2.0 < 360
-        end
+        # ====[ 190919:DEL ]===>
+        ## [ 5日前 ]
+        #if compute_sekki_24(jd - 5) == "春分"
+        #  # 春分の日の黄経(太陽)と翌日の黄経(太陽)の中間点が
+        #  # 0度(360度)未満なら、春分点が午後と判断
+        #  zassetsu << 4 if (lsun_before_4 + lsun_before_5 + 360) / 2.0 < 360
+        #end
+        # <===[ 190919:DEL ]===~
       end
       # 5:土用入（春） ( 黄経(太陽) = 27度 )
       unless lsun_today0 == lsun_tomorrow0
@@ -270,14 +279,19 @@ module MkCalJpl
         if compute_sekki_24(jd + 5) == "秋分"
           # 秋分の日の黄経(太陽)と翌日の黄経(太陽)の中間点が
           # 180度以上なら、秋分点が午前と判断
-          zassetsu << 15 if (lsun_after_5 + lsun_after_6) / 2.0 >= 180
+          # ====[ 190919:UPD ]===>
+          #zassetsu << 15 if (lsun_after_5 + lsun_after_6) / 2.0 >= 180
+          zassetsu << 15
+          # <===[ 190919:UPD ]====
         end
-        # [ 5日前 ]
-        if compute_sekki_24(jd - 5) == "秋分"
-          # 秋分の日の黄経(太陽)と翌日の黄経(太陽)の中間点が
-          # 180度未満なら、秋分点が午後と判断
-          zassetsu << 15 if (lsun_before_4 + lsun_before_5) / 2.0 < 180
-        end
+        # ====[ 190919:DEL ]===>
+        ## [ 5日前 ]
+        #if compute_sekki_24(jd - 5) == "秋分"
+        #  # 秋分の日の黄経(太陽)と翌日の黄経(太陽)の中間点が
+        #  # 180度未満なら、秋分点が午後と判断
+        #  zassetsu << 15 if (lsun_before_4 + lsun_before_5) / 2.0 < 180
+        #end
+        # <===[ 190919:DEL ]====
       end
       # 16:土用入（秋） ( 黄経(太陽) = 207度 )
       unless lsun_today0 == lsun_tomorrow0
